@@ -6,31 +6,31 @@
 
     @php
     // --- Compute average Nature Rune price ---
-    $nHigh = data_get($naturePrice, 'high');
-    $nLow = data_get($naturePrice, 'low');
+    $nHigh = data_get($natureItem, 'price.high');
+    $nLow = data_get($natureItem, 'price.low');
     $natureAvg = is_numeric($nHigh) && is_numeric($nLow) ? ($nHigh + $nLow) / 2
-    : (is_numeric($nHigh) ? $nHigh
-    : (is_numeric($nLow) ? $nLow : 0));
+        : (is_numeric($nHigh) ? $nHigh
+        : (is_numeric($nLow) ? $nLow : 0));
 
     // --- Normalize items (prices now nested under 'price') ---
     $itemsCollection = collect($items ?? [])->map(function ($item) use ($natureAvg) {
-    $high = data_get($item, 'price.high', data_get($item, 'high'));
-    $low = data_get($item, 'price.low', data_get($item, 'low'));
+        $high = data_get($item, 'price.high', data_get($item, 'high'));
+        $low = data_get($item, 'price.low', data_get($item, 'low'));
 
-    $avgItem = is_numeric($high) && is_numeric($low) ? ($high + $low) / 2
-    : (is_numeric($high) ? $high
-    : (is_numeric($low) ? $low : 0));
+        $avgItem = is_numeric($high) && is_numeric($low) ? ($high + $low) / 2
+            : (is_numeric($high) ? $high
+            : (is_numeric($low) ? $low : 0));
 
-    $ha = data_get($item, 'ha', data_get($item, 'high_alch', 0));
-    $profit = $ha - ($avgItem + $natureAvg);
+        $ha = data_get($item, 'ha', data_get($item, 'highalch', 0));
+        $profit = $ha - ($avgItem + $natureAvg);
 
-    return array_merge(
-    is_array($item) ? $item : (array) $item,
-    [
-    '_avg_price' => $avgItem,
-    '_profit' => $profit,
-    ]
-    );
+        return array_merge(
+            is_array($item) ? $item : (array) $item,
+            [
+                '_avg_price' => $avgItem,
+                '_profit' => $profit,
+            ]
+        );
     })->sortByDesc('_profit');
     @endphp
 
@@ -50,11 +50,24 @@
     <!-- Toolbar: Search + Refresh -->
     <div class="mb-4 flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
         <input type="text" id="searchBox"
-            class="w-full md:w-72 px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+            class="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
             placeholder="Search items..." />
+
+        <input type="number" id="maxAvgPrice"
+            class="w-full md:w-40 px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-pink-200"
+            placeholder="Max Avg Price" />
+
+        <input type="number" id="minProfit"
+            class="w-full md:w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-green-200"
+            placeholder="Min Profit" />
+
+        <input type="number" id="minLimit"
+            class="w-full md:w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-purple-200"
+            placeholder="Min GE Limit" />
 
         <a href="?refresh" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Refresh</a>
     </div>
+
 
     <!-- Table -->
     <div class="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -74,9 +87,12 @@
                     @foreach ($itemsCollection as $item)
                     @php
                     $avgItem = data_get($item, '_avg_price', 0);
-                    $ha = data_get($item, 'ha', data_get($item, 'high_alch', 0));
+                    if ($avgItem <= 0) {
+                        continue;
+                    }
+                    $ha = data_get($item, 'ha', data_get($item, 'highalch', 0));
                     $profit = data_get($item, '_profit', 0);
-                    $geLimit = data_get($item, 'ge_limit', 'Unknown');
+                    $geLimit = data_get($item, 'limit', 'Unknown');
                     @endphp
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 font-medium text-gray-800">{{ data_get($item, 'name', 'Unknown') }}</td>
@@ -168,5 +184,36 @@
             rows.forEach(row => tbody.appendChild(row));
         });
     });
+
+    // --- Profit & GE Limit Filters ---
+    const minProfitInput = document.getElementById('minProfit');
+    const minLimitInput = document.getElementById('minLimit');
+    const maxAvgPriceInput = document.getElementById('maxAvgPrice');
+
+    function applyFilters() {
+        const searchTerm = searchBox.value.toLowerCase();
+        const minProfit = parseFloat(minProfitInput.value) || 0;
+        const minLimit = parseInt(minLimitInput.value) || 0;
+        const maxAvgPrice = parseFloat(maxAvgPriceInput.value) || Infinity;
+
+        document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
+            const itemName = row.querySelector('td').innerText.toLowerCase();
+            const profit = parseInt(row.querySelector('.profit').innerText.replace(/,/g, '')) || 0;
+            const geLimit = parseInt(row.children[5].innerText.replace(/,/g, '')) || 0;
+            const avgPrice = parseFloat(row.querySelector('.item-price').value) || 0;
+
+            const matchesSearch = itemName.includes(searchTerm);
+            const matchesProfit = profit >= minProfit;
+            const matchesLimit = geLimit >= minLimit;
+            const matchesAvgPrice = avgPrice <= maxAvgPrice;
+
+            row.style.display = (matchesSearch && matchesProfit && matchesLimit && matchesAvgPrice) ? '' : 'none';
+        });
+    }
+
+    searchBox.addEventListener('keyup', applyFilters);
+    minProfitInput.addEventListener('input', applyFilters);
+    minLimitInput.addEventListener('input', applyFilters);
+    maxAvgPriceInput.addEventListener('input', applyFilters);
 </script>
 @endsection
