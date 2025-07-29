@@ -27,6 +27,7 @@ WORKDIR /build
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY artisan composer.json composer.lock ./
 COPY bootstrap/ bootstrap/
+COPY routes/ routes/
 RUN composer install --no-dev --optimize-autoloader
 
 FROM base
