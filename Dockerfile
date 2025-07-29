@@ -44,8 +44,6 @@ COPY .docker/apache/000-default.conf /etc/apache2/sites-available/000-default.co
 COPY . /var/www/html
 COPY --from=vendor --chown=www-data:www-data /build/vendor /var/www/html/vendor
 COPY --from=vendor --chown=www-data:www-data /build/bootstrap /var/www/html/bootstrap
-RUN touch database/database.sqlite \
-    && chmod 664 database/database.sqlite
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
