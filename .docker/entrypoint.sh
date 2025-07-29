@@ -4,7 +4,7 @@ set -e
 role=${1:-"app"}
 
 tail -F /var/www/html/storage/logs/laravel.log &
-php artisan migrate:fresh
+php artisan migrate --force
 
 if [ "$role" = "app" ]; then
     exec apache2-foreground
