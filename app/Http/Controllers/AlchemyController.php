@@ -124,7 +124,7 @@ class AlchemyController extends Controller
 
     protected function fetchItemPrices(): ?array
     {
-        $url = 'https://prices.runescape.wiki/api/v1/osrs/latest';
+        $url = 'https://prices.runescape.wiki/api/v1/osrs/5m';
 
         try {
             Log::info("Fetching item prices from: $url");
