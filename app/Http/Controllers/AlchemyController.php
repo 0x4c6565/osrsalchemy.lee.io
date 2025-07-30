@@ -13,12 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 class AlchemyController extends Controller
 {
-    /**
-     * Display a listing of items with current GE prices.
-     */
     public function index(Request $request)
     {
-        // Load item metadata from storage/app/items.json
         $items = $this->fetchItemMappingWithCache($request);
         $itemPrices = $this->fetchItemPricesWithCache($request);
 
@@ -37,45 +33,6 @@ class AlchemyController extends Controller
         ]);
     }
 
-    // /**
-    //  * Load items.json from local storage.
-    //  *
-    //  * @return array<int, array<string,mixed>>
-    //  */
-    // protected function loadItemsFromStorage(): array
-    // {
-    //     $path = 'items.json'; // storage/app/items.json
-    //     if (!Storage::disk('local')->exists($path)) {
-    //         return [];
-    //     }
-
-    //     $raw = Storage::disk('local')->get($path);
-    //     $decoded = json_decode($raw, true);
-
-    //     if (!is_array($decoded)) {
-    //         return [];
-    //     }
-
-    //     // Filter out entries without an ID
-    //     return array_values(array_filter($decoded, function ($row) {
-    //         return isset($row['id']) && is_numeric($row['id']);
-    //     }));
-    // }
-
-    // protected function fetchPriceForItem(Request $request, int $id): ?array
-    // {
-    //     if ($id <= 0) {
-    //         return null;
-    //     }
-
-    //     $itemPrices = $this->fetchItemPricesWithCache($request);
-    //     if (!$itemPrices || !isset($itemPrices['data'][$id])) {
-    //         return null;
-    //     }
-
-    //     return $itemPrices['data'][$id];
-    // }
-
     protected function fetchItemMappingWithCache(Request $request): ?array
     {
         $cacheKey = 'osrs_item_mapping';
@@ -93,16 +50,11 @@ class AlchemyController extends Controller
     {
         $url = 'https://prices.runescape.wiki/api/v1/osrs/mapping';
 
-        try {
-            Log::info("Fetching item mapping from: $url");
-            $response = Http::acceptJson()->withUserAgent('OSRSPriceCheck')->timeout(10)->get($url);
-        } catch (\Throwable $e) {
-            // Network error
-            return null;
-        }
+        Log::info("Fetching item mapping from: $url");
+        $response = Http::acceptJson()->withUserAgent('OSRSPriceCheck')->timeout(10)->get($url);
 
         if (!$response->ok()) {
-            dd($response->status(), $response->body());
+            Log::error("Failed to fetch item mapping: " . $response->status() . ' - ' . $response->body());
             return null;
         }
 
@@ -126,16 +78,11 @@ class AlchemyController extends Controller
     {
         $url = 'https://prices.runescape.wiki/api/v1/osrs/5m';
 
-        try {
-            Log::info("Fetching item prices from: $url");
-            $response = Http::acceptJson()->withUserAgent('OSRSPriceCheck')->timeout(10)->get($url);
-        } catch (\Throwable $e) {
-            // Network error
-            return null;
-        }
+        Log::info("Fetching item prices from: $url");
+        $response = Http::acceptJson()->withUserAgent('OSRSPriceCheck')->timeout(10)->get($url);
 
         if (!$response->ok()) {
-            dd($response->status(), $response->body());
+            Log::error("Failed to fetch item prices: " . $response->status() . ' - ' . $response->body());
             return null;
         }
 
