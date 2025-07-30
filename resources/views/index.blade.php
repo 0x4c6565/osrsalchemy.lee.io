@@ -45,7 +45,9 @@
     <div class="mb-6 p-4 bg-blue-100 border border-blue-300 rounded-lg shadow-sm">
         <p class="text-blue-900 text-lg">
             <strong>Average Nature Rune Price:</strong>
-            <span id="naturePrice">{{ number_format((int) round($natureAvg)) }}</span> gp
+            <input type="number" id="naturePriceInput"
+                class="w-28 border rounded px-2 py-1 text-right"
+                value="{{ round($natureAvg) }}" /> gp
         </p>
     </div>
 
@@ -89,7 +91,6 @@
                         <th class="px-4 py-3 text-left font-semibold cursor-pointer" data-sort="string">Item</th>
                         <th class="px-4 py-3 text-right font-semibold cursor-pointer" data-sort="number">Avg Item Price</th>
                         <th class="px-4 py-3 text-right font-semibold cursor-pointer" data-sort="number">High Alch Value</th>
-                        <th class="px-4 py-3 text-right font-semibold cursor-pointer" data-sort="number">Nature Rune</th>
                         <th class="px-4 py-3 text-right font-semibold cursor-pointer" data-sort="number">Profit</th>
                         <th class="px-4 py-3 text-right font-semibold cursor-pointer" data-sort="number">GE Limit</th>
                         <th class="px-4 py-3 text-right font-semibold cursor-pointer" data-sort="number">Avg GE Volume</th>
@@ -115,7 +116,6 @@
                                 data-ha="{{ $ha }}" />
                         </td>
                         <td class="px-4 py-3 text-right text-gray-700 ha-value">{{ number_format((int) $ha) }}</td>
-                        <td class="px-4 py-3 text-right text-gray-700 nature-value">{{ number_format((int) round($natureAvg)) }}</td>
                         <td class="px-4 py-3 text-right font-semibold profit 
                                            @if($profit > 0) text-green-600
                                            @elseif($profit < 0) text-red-600
@@ -135,7 +135,11 @@
 
 <!-- Dynamic Price & Profit Logic -->
 <script>
-    const naturePrice = parseFloat(document.getElementById('naturePrice').innerText.replace(/,/g, ''));
+    let naturePriceInput = document.getElementById('naturePriceInput');
+
+    function getNaturePrice() {
+        return parseFloat(naturePriceInput.value) || 0;
+    }
 
     document.querySelectorAll('.item-price').forEach(input => {
         input.addEventListener('input', () => {
@@ -144,7 +148,7 @@
             const profitCell = row.querySelector('.profit');
 
             let itemPrice = parseFloat(input.value) || 0;
-            let profit = haValue - (itemPrice + naturePrice);
+            let profit = haValue - (itemPrice + getNaturePrice());
 
             // Update Profit Cell
             profitCell.innerText = profit.toLocaleString();
@@ -214,9 +218,9 @@
         document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
             const itemName = row.querySelector('td').innerText.toLowerCase();
             const profit = parseInt(row.querySelector('.profit').innerText.replace(/,/g, '')) || 0;
-            const geLimit = parseInt(row.children[5].innerText.replace(/,/g, '')) || 0;
+            const geLimit = parseInt(row.children[4].innerText.replace(/,/g, '')) || 0;
             const avgPrice = parseFloat(row.querySelector('.item-price').value) || 0;
-            const avgVolume = parseInt(row.children[6].innerText.replace(/,/g, '')) || 0;
+            const avgVolume = parseInt(row.children[5].innerText.replace(/,/g, '')) || 0;
 
             const matchesSearch = itemName.includes(searchTerm);
             const matchesProfit = profit >= minProfit;
@@ -229,6 +233,11 @@
     }
 
     searchBox.addEventListener('keyup', applyFilters);
+    naturePriceInput.addEventListener('input', () => {
+        document.querySelectorAll('.item-price').forEach(input => {
+            input.dispatchEvent(new Event('input'));
+        });
+    });
     minProfitInput.addEventListener('input', applyFilters);
     minLimitInput.addEventListener('input', applyFilters);
     maxAvgPriceInput.addEventListener('input', applyFilters);
