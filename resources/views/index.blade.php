@@ -166,13 +166,13 @@
 
     // --- Search Filter ---
     const searchBox = document.getElementById('searchBox');
-    searchBox.addEventListener('keyup', () => {
-        const term = searchBox.value.toLowerCase();
-        document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
-            const itemName = row.querySelector('td').innerText.toLowerCase();
-            row.style.display = itemName.includes(term) ? '' : 'none';
-        });
-    });
+    // searchBox.addEventListener('keyup', () => {
+    //     const term = searchBox.value.toLowerCase();
+    //     document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
+    //         const itemName = row.querySelector('td').innerText.toLowerCase();
+    //         row.style.display = itemName.includes(term) ? '' : 'none';
+    //     });
+    // });
 
     const table = document.getElementById('itemsTable');
     const tbody = table.querySelector('tbody');
@@ -210,10 +210,10 @@
 
     function applyFilters() {
         const searchTerm = searchBox.value.toLowerCase();
-        const minProfit = parseFloat(minProfitInput.value) || 0;
-        const minLimit = parseInt(minLimitInput.value) || 0;
-        const maxAvgPrice = parseFloat(maxAvgPriceInput.value) || Infinity;
-        const minAvgVolume = parseInt(minAvgVolumeInput.value) || 0;
+        const minProfit = minProfitInput.value === '' ? -Infinity : parseFloat(minProfitInput.value);
+        const minLimit = minLimitInput.value === '' ? -Infinity : parseInt(minLimitInput.value);
+        const maxAvgPrice = maxAvgPriceInput.value === '' ? Infinity : parseFloat(maxAvgPriceInput.value);
+        const minAvgVolume = minAvgVolumeInput.value === '' ? -Infinity : parseInt(minAvgVolumeInput.value);
 
         document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
             const itemName = row.querySelector('td').innerText.toLowerCase();
